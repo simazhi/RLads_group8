@@ -4,14 +4,7 @@ author: "Rlads_group8"
 date: "2017/10/5"
 output: html_document
 ---
-list(
-  Thomas = <x86_64-apple-darwin15.6.0 (64-bit)>,
-  Joy = <x86_64-apple-darwin13.4.0 (64-bit)>,
-  Wenjin = <x86_64-apple-darwin15.6.0 (64-bit)>,
-  Wayne = <x86_64-w64-mingw32/x64 (64-bit)>,
-  Shih = <x86_64-w64-mingw32/x64 (64-bit)>,
-  Tim = <x86_64-apple-darwin13.4.0 (64-bit)>
-)
+
 
 Other representation format
 
