@@ -4,6 +4,9 @@ author: "Tim Lin"
 date: "2017/10/17"
 output: html_document
 ---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
 R 語言與資料科學導論作業 (W5)
 =============================
 
