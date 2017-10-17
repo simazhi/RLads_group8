@@ -12,7 +12,7 @@ R 語言與資料科學導論作業 (W5)
 * 2016不分區立委候選人資料總summary
 ```{r}
 library(tidyverse)
-workingdata<-read.csv("w5_data(2016不分區立委候選人資料).csv",fileEncoding = "big5")
+workingdata<-read.csv("RLads_group8/w5_data(2016不分區立委候選人資料).csv",fileEncoding = "big5")
 workingdata$性別.1.男.2.女 <- factor(workingdata$性別.1.男.2.女)
 colnames(workingdata)[10]<-"當選註記 ' '或-:未當選 *:當選 !:婦女保障"
 #total summary
