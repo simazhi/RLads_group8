@@ -4,20 +4,34 @@ author: "Tim Lin"
 date: "2017/10/17"
 output: html_document
 ---
+R 語言與資料科學導論作業 (W5)
+=============================
 
+## 2016不分區立委候選人資料  
 
-```{r pressure, echo=TRUE}
+* 2016不分區立委候選人資料總summary
+```{r}
 library(tidyverse)
 workingdata<-read.csv("~/Desktop/106-1 DSR/w5_data(2016不分區立委候選人資料).csv",fileEncoding = "big5")
 workingdata$性別.1.男.2.女 <- factor(workingdata$性別.1.男.2.女)
 colnames(workingdata)[10]<-"當選註記 ' '或-:未當選 *:當選 !:婦女保障"
 #total summary
 summary(workingdata)
+
+```
+
+* 2016不分區立委候選人篩選資料summary
+```{r}
 #meaningful data summary
+library(tidyverse)
 output1<- workingdata %>% select(政黨,性別.1.男.2.女,年齡,出生地,學歷,現任.Y.現任.N.非現任 ,colnames(workingdata)[10])
 summary(output1)
+
+```
+
+* 2016不分區立委當選人資料篩選summary
+```{r}
 #elected candidates summary
 output2<- workingdata %>% filter(workingdata[,10]=="*") %>% select(政黨,性別.1.男.2.女,年齡,出生地,學歷,現任.Y.現任.N.非現任 )
 summary(output2)
 ```
-
