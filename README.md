@@ -6,3 +6,4 @@ R Language And Data Science — group 8
 
 * W4 our_environments.Rmd
 * W5 w5_data(2016不分區立委候選人資料).csv
+* W5 w5_datasummary.Rmd and w5_datasummary.html
