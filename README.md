@@ -14,4 +14,5 @@ R Language And Data Science — group 8
 * W6homework_Joychiang.txt
 * W6homework_TimLin.txt
 * W6homework_Wayne. txt
-* w6homework_ThomasVanHoey.txt
+* W6homework_ThomasVanHoey.txt
+* W6Homework_ShihYite.txt
