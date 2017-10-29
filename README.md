@@ -16,3 +16,6 @@ R Language And Data Science — group 8
 * W6homework_Wayne. txt
 * W6homework_ThomasVanHoey.txt
 * W6Homework_ShihYite.txt
+
+### W7
+* W7homework added: analysis_text.txt (截取自立法院公報)
