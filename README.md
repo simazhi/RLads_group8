@@ -18,6 +18,6 @@ R Language And Data Science — group 8
 * W6Homework_ShihYite.txt
 
 ### W7
-From (截取自立法院公報)
+From 截取自立法院公報
 * W7_analysis_text.txt 
 * W7_analysis_text.Rmd
