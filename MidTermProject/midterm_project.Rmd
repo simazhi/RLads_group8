@@ -1,0 +1,151 @@
+---
+title: "R LADS group 8 Midterm Project"
+author: "Thomas"
+date: "14-11-2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Possible project
+
+What needs to be done:
+* install facebook API package
+* get authorization
+
+* find a relevant page in Chinese like BBC (see script below)
+* find a post with a lot of comments, maybe something political or racial or whatever
+* find comments
+* make comments into a corpus/dataframe (see before)
+* cut comments with jieba
+* make wordclouds
+
+
+
+
+
+
+# Set-up
+
+```{r}
+library(tidyverse)
+library(Rfacebook)
+```
+
+# Case study: facebook
+
+  - 到 `https://developers.facebook.com/tools/explorer`
+
+Getting the token, be sure to check all the things you want
+```{r}
+token <- 'EAACEdEose0cBABGiPygjSO3T3ElgzkuxOXlaVNyASg5EQS3Ux7zTEU26nkhiSjc1PfZAHSUcxYwQNcnwhYZCn4EIoRbXbYWRKjwxCY41lZAGqO6BFuZCZAvAzQSppXtFuIc3epB9ovZABo1xJeHWQ5yQxXGxvZAamFNZAn3jixTZATLfYm3rr9vnUbhUcqnIyYp0k7fZAUXKHWwAZDZD'
+```
+
+Checking if we got the right account
+```{r}
+me <- getUsers("me", token, private_info = TRUE)
+#me <- getUsers("me",token=fb_oauth)
+me$name
+```
+
+
+
+```{r}
+BBCpage <- getPage(page="bbcnews", token = token, n=50) 
+```
+
+
+- 特定時間的所有貼文
+
+```{r}
+BBCpage.2 <- getPage("bbcnews", token = token, n=50, since='2017/10/01', until='2017/10/20')
+```
+
+- 哪那一則貼文得到最多的讚?
+
+```{r}
+summary <- BBCpage.2[which.max(BBCpage.2$likes_count),]
+summary$message
+```
+
+
+- 哪一則得到最多的評論?
+```{r}
+summary1 = BBCpage.2[which.max(BBCpage.2$comments_count),]
+
+```
+
+- 哪一則貼文最多分享?
+```{r}
+summary2 = BBCpage.2[which.max(BBCpage.2$shares_count),]
+```
+
+- 得到最多讚的貼文的所有按讚者
+
+```{r}
+post <- getPost(summary$id[1], token = token, comments = FALSE, n.likes=2000)
+
+```
+
+
+- 看看究竟是誰（注意個資）
+
+```{r}
+likes <- post$likes
+head(likes)
+```
+
+
+- 特定貼文的評論
+
+To know what users think about a post, it is important to analyze their comments.
+```{r}
+post <- getPost(BBCpage.2$id[1], token=token, n.comments=1000, likes=FALSE)
+comments <- post$comments
+```
+
+- 哪個評論得到最多的讚？
+
+```{r}
+comments[which.max(comments$likes_count),]
+```
+
+- 最近貼文的心情（需要 tweak）
+
+Facebook has more than a like button. Last year, it launched emoji (emoticons). If a post got 1k likes, it does not mean everyone really loves the comment. The reaction can be happy, sad or angry.
+
+```{r}
+post <- getReactions(post=BBCpage.2$id[1], token= token)
+
+```
+
+
+---
+
+What needs to be done:
+* find a relevant page in Chinese like BBC
+* find a post with a lot of comments, maybe something political or racial or whatever
+* find comments
+* cut comments with jieba
+* make wordclouds
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
