@@ -1,0 +1,142 @@
+---
+title: "R LADS group 8 Midterm Project"
+author: "Thomas"
+date: "14-11-2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Possible project
+
+What needs to be done:
+* install facebook API package
+* get authorization
+
+* find a relevant page in Chinese like BBC (see script below)
+* find a post with a lot of comments, maybe something political or racial or whatever
+* find comments
+* make comments into a corpus/dataframe (see before)
+* cut comments with jieba
+* make wordclouds
+
+
+
+
+
+
+# Set-up
+
+```{r}
+library(tidyverse)
+library(Rfacebook)
+```
+
+# Case study: facebook
+
+  - 到 `https://developers.facebook.com/tools/explorer`
+
+Getting the token, be sure to check all the things you want
+```{r}
+token <- 'EAACEdEose0cBAKE6wD4oOIVrKvPZAGZBJ8xGOHihihxmyphZBKzfyozBjsZBOMQkfEcO1KPvzybiC6q9XWO0nJNG1wN5LGQPbsnsIFPiGZCXuKg4Gs5qqJ33M5YENZAflBBUiONIKwcsBEYHBmBxMTGZA9VL3Xgqq5ezVhi7mXPJzGivY9oCedpy1s0mknWsQnOKpqEnrg04AZDZD'
+```
+
+Checking if we got the right account
+```{r}
+me <- getUsers("me", token, private_info = TRUE)
+#me <- getUsers("me",token=fb_oauth)
+me$name
+```
+
+
+
+```{r}
+myudnpage <- getPage(page="myudn", token = token, n=50) 
+```
+
+
+- 特定時間的所有貼文
+
+```{r}
+myudnpage.2 <- getPage("myudn", token = token, n=260, since='2017/11/10', until='2017/11/13')
+names(myudnpage.2)
+myudnpage.2
+```
+
+-討論度最高的25篇文章（25/252，約為前1/10）
+```{r}
+hc<-myudnpage.2 %>%
+  arrange(desc(comments_count))
+
+mc<-head(hc,n=25)
+mctitles<-mc$message
+mctitles
+```
+
+
+- 得到最多讚的25篇文章
+
+```{r}
+hl<-myudnpage.2 %>%
+  arrange(desc(likes_count))
+
+ml<-head(hc,n=25)
+mltitles<-ml$message
+mltitles
+```
+
+
+
+
+```{r}
+library(tidyverse)
+library(stringr)
+library(jiebaR)
+seg <- worker()
+seg
+```
+
+Part A：討論度最高的25篇文章
+
+-分詞、找出所有出現次數超過2次的詞，並把這些詞和其出現次數列出來
+```{r}
+words<-seg[mctitles]
+freq<-sort(table(words),decreasing = T)
+df2<-data.frame(freq)
+df3<-df2%>%
+  filter(Freq >= 2)%>%
+  arrange(desc(Freq))
+df3
+```
+
+-畫出文字雲（去掉最高頻詞“的”）
+#小結：這是聯合新聞網在2017/11/10-11/13期間內討論度top 10%的貼文標題文字雲
+```{r}
+library(wordcloud2)
+wordcloud2(df3[-1,], size = 1,shape = 'square')
+```
+
+Part B：得到最多讚的25篇文章
+
+-分詞、找出所有出現次數超過2次的詞，並把這些詞和其出現次數列出來
+```{r}
+words<-seg[mltitles]
+freq<-sort(table(words),decreasing = T)
+df4<-data.frame(freq)
+df4<-df3%>%
+  filter(Freq >= 2)%>%
+  arrange(desc(Freq))
+df4
+```
+
+-畫出文字雲（去掉最高頻詞“的”）
+#小結：這是聯合新聞網在2017/11/10-11/13期間內討論度top 10%的貼文標題文字雲
+```{r}
+wordcloud2(df4[-1,], size = 1,shape = 'square')
+```
+
+
+呃...點讚前25多跟討論度前25高一模一樣，是我寫錯了嗎QQ
