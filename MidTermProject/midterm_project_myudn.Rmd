@@ -89,6 +89,17 @@ mltitles
 ```
 
 
+- 得到最多讚文章的最多讚留言(不意外地聯合粉絲都希望罷免他XD)
+```{r}
+# get the most comment post
+post <- getPost(ml$id[1], token=token, n.comments=1000, likes=FALSE)
+comments <- post$comments
+
+# arrange the comments' likes_count
+mostlikecomment<-comments %>% arrange(desc(likes_count))
+head(mostlikecomment$message,15)
+```
+
 
 
 ```{r}
