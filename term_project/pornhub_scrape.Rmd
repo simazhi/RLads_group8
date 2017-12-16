@@ -115,52 +115,29 @@ videopages <- map_df(link_check,
                     html_text() %>%
                     as.numeric()
                   
+                  #nominal data
+                  ##categories
+                  categories <- page %>%
+                    html_nodes(xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "categoriesWrapper", " " ))]') %>%
+                    html_text() %>%
+                    str_replace_all("\n|\t|\\+ Suggest", "") %>%
+                    str_replace_all("^Categories:", "")  %>%
+                    as.character()
+
 
                   data.frame(
-                    #url = unlist(url),
-                    #categories = unlist(categories),
+                    url = unlist(url),
                     views = views,
                     upvotes = upvotes,
                     downvotes = downvotes,
-                    percentage = percentage
+                    percentage = percentage,
+                    categories = categories
                   )
                   
                 })
 #View(teksten)
 videopages
 ```
-
-
-
-
-```{r}
-categories <- map_df(link_check,
-                function(url){
-                  
-                  cat(".")
-                  
-                  page <- url %>%
-                    read_html()
-                  
-                  #nominal data
-                  ##categories
-                  categories <- page %>%
-                    html_nodes(xpath = '//*[@id="main-container"]/div[2]/div[5]/div[1]/div[1]/div[2]/div[2]/div[1]') %>%
-                    html_text() %>%
-                    str_replace_all("\n|\t|\\+ Suggest", "") %>%
-                    as.character()                  
-
-                  data.frame(
-                    #url = unlist(url),
-                    categories = categories
-                  )
-                  
-                })
-#View(teksten)
-categories
-```
-
-
 
 ## Comments (1 page -> many comments)
 ```{r}
