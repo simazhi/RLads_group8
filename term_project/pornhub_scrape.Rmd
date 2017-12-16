@@ -1,0 +1,264 @@
+---
+title: "pornhub_scrape"
+author: "Thomas"
+date: "16/12/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages
+```{r}
+library(rvest)
+library(tidyverse)
+library(stringr)
+library(robotstxt) #this checks if you srape a certain website, useful for debugging
+```
+
+# Scraping
+Can I scrape the website?
+
+```{r}
+robotstxt::paths_allowed("https://www.pornhub.com")
+```
+
+# Plan for retrieving information
+
+![workflow](https://github.com/simazhi/RLads_group8/term_project/images/image_preview.png)
+
+
+# Test case
+
+## Finding out which links we should use
+lesbian + most viewed + 1000 first
+
+lesbian is category 27
+mostviewd is mv
+
+page 1: 1-32 => 32 per page
+page 2: 45-88 => 43 per page
+page 3: 89-132 => 43 per page
+...
+so to get at 1000 we need to get 22 + 1 (for the first page) = to number 23
+
+```{r}
+(1000-32) %/% 43
+```
+
+The link then looks like this:
+```https://www.pornhub.com/  video?  c=X   &  o=Y  &  page=Z```
+with X = 27, Y = mv, Z = 1 to 23
+
+# Getting the links in one function
+
+```{r}
+resultspages <- 1:2  ##Change this to 23 for the complete set
+url_base <- "https://www.pornhub.com/video?c=27&o=mv&page=%d"
+
+
+link_check <- map(resultspages, function(i){
+  links <- read_html(sprintf(url_base, i)) %>%
+    html_nodes(xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "title", " " ))]//a') %>%
+    html_attr('href') %>%
+    str_replace_all("/(view.+)", "https://www.pornhub.com/\\1") %>%#add website domain
+    as.tibble() %>%
+    filter(grepl("^https", value)) %>%
+    pull(value) #turns variable in tibble into vector
+    
+    return(links)
+  
+})
+link_check <- unlist(link_check)
+#link_check <- link_check[1:5]
+link_check
+```
+
+# Scraping the webpages
+
+## Video pages (1 page -> 1 kind of element)
+```{r echo = FALSE}
+videopages <- map_df(link_check,
+                function(url){
+                  
+                  cat(".")
+                  
+                  page <- url %>%
+                    read_html()
+                  
+
+                  #numerical data
+                  ##views
+                  views <- page %>%  
+                    html_nodes(xpath ='//*[contains(concat( " ", @class, " " ), concat( " ", "count", " " ))]') %>%
+                    html_text() %>%
+                    str_replace_all(",", "") %>%
+                    as.numeric()
+                  
+                  ##percentage
+                  percentage <- page %>%
+                    html_nodes(xpath ='//*[contains(concat( " ", @class, " " ), concat( " ", "percent", " " ))]') %>%
+                    html_text() %>%
+                    str_replace_all("%", "") %>%
+                    as.numeric()
+                    
+                  ##upvotes
+                  upvotes <- page %>%
+                    html_nodes(xpath ='//*[contains(concat( " ", @class, " " ), concat( " ", "votesUp", " " ))]') %>%
+                    html_text() %>%
+                    as.numeric()
+                  
+                  ##downvotes
+                  downvotes <- page %>%
+                    html_nodes(xpath ='//*[contains(concat( " ", @class, " " ), concat( " ", "votesDown", " " ))]') %>%
+                    html_text() %>%
+                    as.numeric()
+                  
+
+                  data.frame(
+                    #url = unlist(url),
+                    #categories = unlist(categories),
+                    views = views,
+                    upvotes = upvotes,
+                    downvotes = downvotes,
+                    percentage = percentage
+                  )
+                  
+                })
+#View(teksten)
+videopages
+```
+
+
+
+
+```{r}
+categories <- map_df(link_check,
+                function(url){
+                  
+                  cat(".")
+                  
+                  page <- url %>%
+                    read_html()
+                  
+                  #nominal data
+                  ##categories
+                  categories <- page %>%
+                    html_nodes(xpath = '//*[@id="main-container"]/div[2]/div[5]/div[1]/div[1]/div[2]/div[2]/div[1]') %>%
+                    html_text() %>%
+                    str_replace_all("\n|\t|\\+ Suggest", "") %>%
+                    as.character()                  
+
+                  data.frame(
+                    #url = unlist(url),
+                    categories = categories
+                  )
+                  
+                })
+#View(teksten)
+categories
+```
+
+
+
+## Comments (1 page -> many comments)
+```{r}
+usercomments <- map_df(link_check,
+                function(url){
+                  
+                  cat(".")
+                  
+                  page <- url %>%
+                    read_html()
+                  
+                  #comments
+                  comments <- page %>%
+                    html_nodes(xpath ='//*[contains(concat( " ", @class, " " ), concat( " ", "commentMessage", " " ))]') %>%
+                    html_text() %>%
+                    str_replace_all("\t|\n| Reply|•", "") %>%
+                    str_replace_all("(\\d+)$", " \\1") %>%
+                    str_replace_all("\\[\\[commentMessage\\]\\] 0", "")
+                  
+                  comments <- comments[comments != ""]
+
+                  ##commenters
+                  commenters <- page %>%
+                    html_nodes(xpath = '//*[(@id = "cmtContent")]//*[contains(concat( " ", @class, " " ), concat( " ", "usernameLink", " " ))]') %>%
+                    html_text()                
+                  
+
+                  data.frame(
+                    #url = unlist(url),
+                    commenters = commenters,
+                    comments = comments
+                  )
+                  
+                })
+#View(teksten)
+usercomments
+```
+
+
+
+# Problems
+* How do I print the number/link repeatedly in the dataframe?
+* Should we split categories from character vector into different values? (tidy data)
+* Should the data be tidieR?
+
+
+
+
+
+
+
+---
+# For only one variable
+
+## Getting the links
+```{r}
+# set webpage 
+page <- read_html("https://www.pornhub.com/video?c=27&o=mv&page=1")
+
+link <- page %>%
+  html_nodes(xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "title", " " ))]//a') %>%
+  html_attr('href') 
+## because I used the xpath notation I am sure that I'm grabbing the right things, so the steps below are unnecessary this time
+
+
+#link
+
+link_check <- link %>%
+  str_replace_all("/(view.+)", "https://www.pornhub.com/\\1") %>%#add website domain
+  as.tibble() %>%
+  filter(grepl("^https", value)) %>%
+  pull(value) #turns variable in tibble into vector
+
+link_check
+
+```
+
+
+```{r}
+testlink <- "https://www.pornhub.com/view_video.php?viewkey=ph59395b73b70ac"
+link_check <- c("https://www.pornhub.com/view_video.php?viewkey=ph5681abe10ceed", "https://www.pornhub.com/view_video.php?viewkey=ph5a2b529d4e452")
+a <- read_html(testlink)
+
+b <- a %>%
+                    html_nodes(xpath = '//*[(@id = "cmtContent")]//*[contains(concat( " ", @class, " " ), concat( " ", "usernameLink", " " ))]') %>%
+                    html_text()
+
+c <- a %>%
+                
+                    html_nodes(xpath ='//*[contains(concat( " ", @class, " " ), concat( " ", "commentMessage", " " ))]') %>%
+                    html_text() %>%
+                    str_replace_all("\t|\n| Reply|•", "") %>%
+                    str_replace_all("(\\d+)$", " \\1") %>%
+                    str_replace_all("\\[\\[commentMessage\\]\\] 0", "")
+  
+c
+c[c != ""]
+```
+//*[@id="main-container"]/div[2]/div[5]/div[1]/div[1]/div[2]/div[2]/div[1]
+
+//*[@id="main-container"]/div[2]/div[5]/div[1]/div[1]/div[2]/div[2]/div[1]/a[1]
