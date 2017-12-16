@@ -185,6 +185,8 @@ usercomments
 * Should we split categories from character vector into different values? (tidy data)
 * Should the data be tidieR?
 
+* Still have to scrape the user pages
+
 
 
 
