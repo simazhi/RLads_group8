@@ -22,6 +22,7 @@ Can I scrape the website?
 
 ```{r}
 robotstxt::paths_allowed("https://www.pornhub.com")
+robotstxt::robotstxt("https://www.pornhub.com")$crawl_delay %>% tbl_df()
 ```
 
 # Plan for retrieving information
@@ -54,11 +55,14 @@ with X = 27, Y = mv, Z = 1 to 23
 # Getting the links in one function
 
 ```{r}
-resultspages <- 1:2  ##Change this to 23 for the complete set
+resultspages <- 1:23  ##Change this to 23 for the complete set
 url_base <- "https://www.pornhub.com/video?c=27&o=mv&page=%d"
 
 
 link_check <- map(resultspages, function(i){
+  
+  cat(".")
+  
   links <- read_html(sprintf(url_base, i)) %>%
     html_nodes(xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "title", " " ))]//a') %>%
     html_attr('href') %>%
@@ -72,17 +76,31 @@ link_check <- map(resultspages, function(i){
 })
 link_check <- unlist(link_check)
 #link_check <- link_check[1:5]
-link_check
+
+#link_check
 ```
 
+```{r}
+write.table(link_check, file = "links.txt")
+```
+
+### subset of links
+```{r}
+#link_check <- link_check[1:2]
+#link_check
+```
+
+
 # Scraping the webpages
+
 
 ## Video pages (1 page -> 1 kind of element)
 ```{r echo = FALSE}
 videopages <- map_df(link_check,
                 function(url){
+                  tryCatch({
                   
-                  cat(".")
+                  cat(paste("Doing", url, "\n"))
                   
                   page <- url %>%
                     read_html()
@@ -122,10 +140,11 @@ videopages <- map_df(link_check,
                     html_text() %>%
                     str_replace_all("\n|\t|\\+ Suggest", "") %>%
                     str_replace_all("^Categories:", "")  %>%
+                    str_replace_all("^\\s", "")
                     as.character()
 
-
-                  data.frame(
+                  ##data frame
+                  df <- data.frame(
                     url = unlist(url),
                     views = views,
                     upvotes = upvotes,
@@ -134,17 +153,31 @@ videopages <- map_df(link_check,
                     categories = categories
                   )
                   
+                  
+                  
+                  }, error = function(e) {
+                    Sys.sleep(2)
+                    e
+                  }
+                  ) 
+                  
                 })
 #View(teksten)
+
 videopages
+
+write_csv(videopages, "videopages.csv")
 ```
 
+
 ## Comments (1 page -> many comments)
+
 ```{r}
 usercomments <- map_df(link_check,
                 function(url){
+                  tryCatch({
                   
-                  cat(".")
+                  cat(paste("Doing", url, "\n"))                  
                   
                   page <- url %>%
                     read_html()
@@ -167,26 +200,230 @@ usercomments <- map_df(link_check,
                   l <- length(commenters)
                   
                   origin <- rep(url, l)
-
-                  data.frame(
+                  
+                  #Data frame
+                  df <- data.frame(
                     origin = unlist(origin),
                     commenters = commenters,
                     comments = comments
                   )
                   
+                  
+                  
+                  }, error = function(e) {
+                    Sys.sleep(2)
+                    e
+                  }
+                  )
+  
                 })
 #View(teksten)
 usercomments
+
+write_csv(usercomments, "usercomments.csv")
+```
+
+
+
+## Get user data
+
+### Links to user profiles
+```{r user.list}
+userlist <- usercomments %>%
+  select(commenters) %>%
+  distinct() %>%
+  pull() %>%
+  str_replace_all("\\s", "%20")
+
+#userlist
+
+url_base <- "https://www.pornhub.com/users/%s"
+
+
+userprofile <- map(userlist, function(i){
+  links <- sprintf(url_base, i) 
+  return(links)
+})
+
+userprofile <- unlist(userprofile)
+#userprofile
+```
+
+### Subselection of profiles
+```{r}
+#userprofile <- userprofile[1]
+#userprofile
+```
+
+
+
+```{r}
+vars <- read_html(userprofile) %>%
+  html_nodes(xpath = '//*[@id="profileInformation"]/div/div[2]/dl') %>%
+                    html_text() %>% 
+                    str_replace_all("\t+", "") %>%
+                    str_replace_all("\n", " ")
+
+vars
+
+interest <- vars %>%
+                    str_extract("Interested\\sIn:\\s[A-Z][a-z]+\\s") %>%
+                    str_replace_all("Interested\\sIn:\\s", "") %>%
+                    str_replace_all("\\s", "")
+
+interest
+```
+
+
+### Data on userprofiles
+```{r}
+
+userdata <- map_df(userprofile,
+                function(url){
+                  tryCatch({
+                  
+                  cat(paste("Doing", url, "\n"))                  
+                  
+                  page <- url %>%
+                    read_html()
+                  
+                  user <- url %>%
+                    str_replace_all("^https://www.pornhub.com/users/", "")
+
+                  #intro    but do we want this?
+                  #intro <- page %>%
+                  #  html_nodes('#profileInformation > div > div.profileInfo > dl > p') %>%
+                  #  html_text() 
+                  
+                  
+                  #variables
+                  vars <- page %>%
+                    html_nodes(xpath = '//*[@id="profileInformation"]/div/div[2]/dl') %>%
+                    html_text() %>% 
+                    str_replace_all("\t+", "") %>%
+                    str_replace_all("\n", " ")
+                  
+                  ##Gender
+                  gender <- vars %>%
+                    str_extract("Gender:.+Age:") %>%
+                    str_replace_all("Gender:|Age:", "") %>%
+                    str_replace_all("\\s", "")
+                  
+                  ##Age
+                  age <- vars %>%
+                    str_extract("Age: \\d+") %>%
+                    str_replace_all("Age:", "") %>%
+                    str_replace_all("\\s", "")
+                  
+                  ##Last Login
+                  lastlogin <- vars %>%
+                    str_extract("Last Login:.+ago\\s[A-Z]") %>%
+                    str_replace_all("Last Login:\\s|\\s[A-Z]", "")
+                  
+                  ##Relationship Status
+                  relstatus <- vars %>%
+                    str_extract("Status:.+Interested") %>%
+                    str_replace_all("^.+:|Interested", "") %>%
+                    str_replace_all("\\s", "")
+                  
+                  ##Interested in
+                  interest <- vars %>%
+                    str_extract("Interested\\sIn:\\s[A-Z][a-z]+\\s") %>%
+                    str_replace_all("Interested\\sIn:\\s", "") %>%
+                    str_replace_all("\\s", "")
+                  
+                  ##Country
+                  country <- vars %>%
+                    str_extract("Country:\\s[A-Za-z]+(\\s[A-Za-z]+)?") %>%
+                    str_replace_all("Country:\\s", "") %>%
+                    str_replace_all("\\s", "_")
+                  
+                  ##City
+                  city <- vars %>%
+                    str_extract("City:.+Country:") %>%
+                    str_replace_all("City:\\s|\\sCountry:", "") %>%
+                    str_replace_all("\\s", "_")
+                  
+                  #data frame
+                  df <- data.frame(
+                    user = user,
+                    gender = gender,
+                    interest = interest,
+                    age = age,
+                    lastlogin = lastlogin,
+                    relstatus = relstatus,
+                    country = country,
+                    city = city
+                    )
+                  
+                  }, error = function(e) {
+                    Sys.sleep(2)
+                    e
+                  }
+                  )
+
+                })
+#View(teksten)
+userdata
+
+write_csv(userdata, "userdata.csv")
+```
+
+
+
+
+
+
+
+
+# To read back in use read_csv
+```{r}
+#a <- read_csv("usercomments.csv")
+#a
 ```
 
 
 
 # Problems
+
 * Should we split categories from character vector into different values? (tidy data)
 * Should the data be tidieR?
+* Do we need the About intro on the profile page? Not everybody has one.
 
-* Still have to scrape the user pages
 
+
+
+
+
+```{r}
+for (i in seq_along(links)) {
+  if (!(links[i] %in% names(d))) {
+    cat(paste("Doing", links[i], "..."))
+    ok <- FALSE
+    counter <- 0
+    while (ok == FALSE & counter <= 5) {
+      counter <- counter + 1
+      out <- tryCatch({                  
+                  scrape_test(links[i])
+                },
+                error = function(e) {
+                  Sys.sleep(2)
+                  
+                }
+              )
+      if ("error" %in% class(out)) {
+        cat(".")
+      } else {
+        ok <- TRUE
+        cat(" Done.")
+      }
+    }
+    cat("\n")
+    d[[i]] <- out
+    names(d)[i] <- links[i]
+  }
+} 
+```
 
 
 
@@ -239,7 +476,11 @@ c <- a %>%
   
 c
 c[c != ""]
-```
-//*[@id="main-container"]/div[2]/div[5]/div[1]/div[1]/div[2]/div[2]/div[1]
 
-//*[@id="main-container"]/div[2]/div[5]/div[1]/div[1]/div[2]/div[2]/div[1]/a[1]
+d <- length(c)
+d
+
+
+e <- rep(testlink, d)
+e
+```
