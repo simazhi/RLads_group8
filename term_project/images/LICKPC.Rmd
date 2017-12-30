@@ -1,0 +1,48 @@
+---
+title: "LICKPC"
+author: "Yehwenchin"
+date: "2017/12/29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(networkD3)
+
+LICKPC <- list(name = "LICK", children = list(
+               list(name = "Lesbian Porn",
+                    children = list(list(name = "1.PUSSY"),
+                                    list(name = "2.ASS"),
+                                    list(name = "3.ASSHOLE"),
+                                    list(name = "4.CLIT"),
+                                    list(name = "5.FOOT"))),
+               list(name = "All Porn",
+                    children = list(list(name = "1.PUSSY"),
+                                    list(name = "2.ASS"),
+                                    list(name = "3.ASSHOLE"),
+                                    list(name = "4.BALL"),
+                                    list(name = "5.CLITORIS"))),
+               list(name = "General English",
+                    children = list(list(name = "1.LIP"),
+                                    list(name = "2.PUSSY"),
+                                    list(name = "3.WOUND"),
+                                    list(name = "4.FINGER"),
+                                    list(name = "5.CHOP")))
+))
+
+
+#radialNetwork(List = LICKPC, height = NULL, width = NULL, fontSize = 15,
+ # fontFamily = "serif", linkColour = "#ccc", nodeColour = "#fff",
+  #nodeStroke = "hotpink", textColour = "navyblue", opacity = 1.5,
+  #margin = NULL)
+
+
+diagonalNetwork(List = LICKPC, height = NULL, width = NULL, fontSize = 20,
+  fontFamily = "serif", linkColour = "#ccc", nodeColour = "#fff",
+  nodeStroke = "hotpink", textColour = "navyblue", opacity = 2,
+  margin = NULL)
+```
+
