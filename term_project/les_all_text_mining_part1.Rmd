@@ -1,0 +1,251 @@
+---
+title: "les_all_text_mining"
+author: "ChiungYuChiang"
+date: "2017/12/26"
+output: html_document
+---
+
+# 前置作業
+1. 取得網頁文字資料（請參見司馬智的資料連結）
+資料說明：In this folder we can find all the files that were scraped from Pornhub.com  （Des. 22th  Thomas post on paper notes）
+Categories: LESBIAN + MOST VIEWED + THIS WEEK 
+            ALL     + MOST VIEWED + THIS WEEK
+2. 整個資料夾下載後直接解壓縮，解壓縮後系統自動命名為「datafiles」。
+
+# 設定工作路徑
+```{r}
+# check the working directory and reset
+print(getwd()) 
+setwd("/Users/joysofia/NTUGIL/dsR2017/RLads_group8/MidTermProject")
+getwd()
+```
+
+# 準備 les 的資料
+```{r}
+library(quanteda)
+library(stringr)
+library(readtext)
+# 1. 整理阿智爬下來的原始資料、抽取評論句末的數值＆重新命名欄位
+les <- read.csv("datafiles/usercomments_lesbian.csv", header = T, stringsAsFactors = F)
+colnames(les) = c("link","title","userid","comment")
+les # 看一下它長什麼樣
+class(les) # 確認資料型態
+
+#find the numbers at the end of the sentences and make it as the new colume named "vote_up"
+les$comment[1] # 確認字串抽取目標
+vote_up <- str_extract(les$comment, "[0-9]+$")
+length(vote_up) # 確認數量是否與評論數量相同
+class(vote_up)
+les$vote_up <- vote_up # 新增欄位
+les$comment <- les$comment %>% str_replace("[0-9]+$", " ") %>% str_replace("(https?)://([\\w\\.]+)([\\w/\\.]+)(\\?[\\w/\\.]+)(=[\\w/\\.]+)|(https?)://([\\w\\.]+)([\\w/\\.]+)", "####")
+les # 看一下新的資料長什麼樣，確認無誤就存檔。
+#save the new one as the target file
+write.csv(les, file = "comments/comment_les_col_renamed.csv") #這就是將用來分析的les資料！
+
+# 2. 使用 quanteda 進行分析的 pre-process
+#read file with readtext(): doc_id == number of the comments ; text == comment
+lestf <- readtext("comments/comment_les_col_renamed.csv", text_field = "comment")
+head(lestf$text, 20)
+lestf
+
+# 2.1 build a new corpus from the texts 語料庫可以用來做 ＫＷＩＣ！
+comlesCorpus <- corpus(lestf)
+head(comlesCorpus) 
+texts(comlesCorpus) #To extract texts from a corpus 分析時似乎都用text 的編號取代，不會呈現出原本的文字，要用這個方法才抓得到原本的文字。
+summary(comlesCorpus, 10) #types & tokens are counted! cool!
+
+# 2.2 Constructing a document-feature matrix 
+# 特色說明：dfm(), which performs tokenization and tabulates the extracted features into a matrix of documents by features. Unlike the conservative approach taken by tokens(), the dfm() function applies certain options by default, such as tolower() – a separate function for lower-casing texts – and removes punctuation. All of the options to tokens() can be passed to dfm(), however.
+lesDfm <- dfm(comlesCorpus, remove = stopwords("english"), remove_punct = TRUE, remove_numbers=TRUE) #這邊不建議用stem = T, 因為字尾的部分會被去掉
+lesDfm[1:5,1:5]
+summary(topfeatures(lesDfm, 100))
+```
+
+# 準備 all 的資料
+```{r}
+all <- read.csv("datafiles/usercomments_all.csv", header = F, stringsAsFactors = F)
+colnames(all) = c("link","title","userid","comment")
+all # 看一下它長什麼樣
+class(all) # 確認資料型態
+#find the numbers at the end of the sentences and make it as the new colume named "vote_up"
+all$comment[1] # 確認字串抽取目標 !!!這裡竟然有神奇的圖型出現！！（希望資料是無毒的＠＠
+vote_up <- str_extract(all$comment, "[0-9]+$") #抽取句末數值
+length(vote_up) # 確認數量是否與評論數量相同
+class(vote_up)
+all$vote_up <- vote_up # 新增欄位
+all$comment <- all$comment %>% str_replace("[0-9]+$", " ") %>% str_replace("(https?)://([\\w\\.]+)([\\w/\\.]+)(\\?[\\w/\\.]+)(=[\\w/\\.]+)|(https?)://([\\w\\.]+)([\\w/\\.]+)", "####")
+all # 看一下新的資料長什麼樣，確認無誤就存檔。
+#save the new one as the target file
+write.csv(all, file = "comments/comment_all_col_renamed.csv") #這就是將用來分析的all資料！
+
+# 2. 使用 quanteda 進行分析的 pre-process
+alltf <- readtext("comments/comment_all_col_renamed.csv", text_field = "comment")
+head(alltf$text, 20)
+alltf
+
+# 2.1 build a new corpus from the texts 語料庫可以用來做 ＫＷＩＣ！
+comallCorpus <- corpus(alltf)
+head(comallCorpus) 
+texts(comallCorpus) #To extract texts from a corpus 分析時似乎都用text 的編號取代，不會呈現出原本的文字，要用這個方法才抓得到原本的文字。
+summary(comallCorpus, 10) #types & tokens are counted! cool!
+
+# 2.2 Constructing a document-feature matrix 
+allDfm <- dfm(comallCorpus, remove = stopwords("english"), remove_punct = TRUE, remove_numbers=TRUE) 
+allDfm[1:5,1:5]
+summary(topfeatures(allDfm, 100))
+```
+
+# les & all 資料整併與清理
+```{r}
+library(dplyr)
+# les 影片資訊
+videoinfo <- read.csv("datafiles/videopages_lesbian.csv", header = T, stringsAsFactors = F)
+nrow(videoinfo) # 1,004 rows fro les videoinfo
+colnames(videoinfo) <- c("link","title", "views", "upvotes", "downvotes", "precentage", "categories")
+print(c("videoinfo_lesbian_rownumber:", nrow(videoinfo)))
+print(c("videoinfo_lesbian_colnumber:", ncol(videoinfo)))
+# les + videoinfo for les [42,054] 只增加影片資訊
+lesaddon <- left_join(les,videoinfo, by="link")
+lesaddon
+lesaddon$tag <- "les"
+nrow(lesaddon)
+ncol(lesaddon)
+
+# all 影片資訊
+allvideoinfo <- read.csv("datafiles/videopages_all.csv", header = F, stringsAsFactors = F)
+allvideoinfo
+colnames(allvideoinfo) <- c("link","title", "views", "upvotes", "downvotes", "precentage", "categories")
+nrow(allvideoinfo) # 1,020 rows for allvideoinfo
+# all + allvideoinfo [133,438] 只增加影片資訊
+alladdon <- left_join(all, allvideoinfo, by="link")
+alladdon$tag <- "all"
+alladdon
+nrow(alladdon)
+ncol(alladdon)
+
+
+# 製作超級大表格
+addoncombine <- bind_rows(alladdon, lesaddon)
+addoncombine
+nrow(addoncombine)
+write.csv(addoncombine, file="comments/combine.csv")
+
+# 清 comment 資料
+cleancombine <- str_replace(addoncombine$comment, "[0-9]+$", " ") #vote_up次數已取出，故可用空白鍵取代
+cleancombine
+cleantext <- str_replace(cleancombine,"(https?)://([\\w\\.]+)([\\w/\\.]+)(\\?[\\w/\\.]+)(=[\\w/\\.]+)|(https?)://([\\w\\.]+)([\\w/\\.]+)", "####") # 以####為記號區別其留言本身是否為網址列
+cleantext
+
+# 回存清乾淨的資料作為comment分析主要資料！
+addoncombine$comment <- cleantext
+addoncombine
+write.csv(addoncombine, file="comments/cleantext.csv")
+```
+
+# les+all 資料分析
+```{r}
+# read 超大表格>>製作語料庫>>製作dfm  
+bigtx <- readtext("comments/cleantext.csv", text_field = "comment")
+bigCorpus <- corpus(bigtx)
+bigdfm <- dfm(bigCorpus,groups = "tag", remove = stopwords("english"), remove_punct = TRUE)
+tag_corpus <- corpus_subset(bigCorpus, tag %in% c("les", "all"))
+tag_dfm <- dfm(tag_corpus, groups = "tag", remove = stopwords("english"), remove_punct = TRUE)
+tag_corpus[3, ]
+
+# Plot the results of a "keyword" of features comparing their differential associations with a target and a reference group, in this case: compare the comments from les and all (貌似使用卡方分佈？)
+result_keyness <- textstat_keyness(tag_dfm, target = "les")
+textplot_keyness(result_keyness)
+textplot_keyness(result_keyness, n= 50, show_reference = F)#不呈現對照組
+
+```
+
+```{r}
+# all 文字雲 top 50
+textplot_wordcloud(allDfm, min.freq = 2013, random.order = FALSE, colors = RColorBrewer::brewer.pal(8,"Dark2"))
+# les 文字雲 top 50
+textplot_wordcloud(lesDfm, min.freq = 637, random.order = FALSE, colors = RColorBrewer::brewer.pal(9,"Set1"))
+# plot a “comparison cloud” of les and all
+dfm_trim(tag_dfm, min_count = 1200, verbose = FALSE) %>%
+    textplot_wordcloud(comparison = TRUE)
+```
+
+```{r}
+# plot the frequency of the top features
+# install.packages("plotly")
+library(plotly)
+library(ggplot2)
+# top 30 in all  
+freqall <- corpus_subset(bigCorpus, tag %in% c("all")) %>% dfm(remove = stopwords("english"), remove_punct = TRUE) %>% textstat_frequency(n= 100)
+freqall$feature <- with(freqall, reorder(feature, -frequency))
+ggplot(freqall[1:30, ], aes(x = feature, y = frequency)) +
+    geom_point() + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# top 30 in les
+freqles <- corpus_subset(bigCorpus, tag %in% c("les")) %>% dfm(remove = stopwords("english"), remove_punct = TRUE) %>% textstat_frequency(n= 100)
+freqles$feature <- with(freqles, reorder(feature, -frequency))
+ggplot(freqles[1:30, ], aes(x = feature, y = frequency)) +
+    geom_point() + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+# test: 相似度
+```{r}
+# Similarities between texts
+# These functions compute matrixes of distances and similarities between documents or features from a dfm and return a dist object (or a matrix if specific targets are selected). 
+comSimil <- textstat_simil(tag_dfm, c("all" , "les"), 
+                             margin = "documents", method = "cosine")
+comSimil
+
+# look at term similarities
+sim <- textstat_simil(tag_dfm, c("lick", "fuck"), method = "cosine", margin = "features")
+lapply(as.list(sim), head, 20)
+```
+
+# test： 自動抽取主題
+# LDA介紹 https://eight2late.wordpress.com/2015/09/29/a-gentle-introduction-to-topic-modeling-using-r/
+```{r}
+# les+all
+if (require(topicmodels)) {
+    myLDAfit20 <- LDA(convert(tag_dfm, to = "topicmodels"), k = 10)
+    get_terms(myLDAfit20, 3)
+}
+```
+
+```{r}
+# les
+if (require(topicmodels)) {
+    myLDAfit20 <- LDA(convert(lesDfm, to = "topicmodels"), k = 10)
+    get_terms(myLDAfit20, 3)
+}
+```
+
+```{r}
+# all
+if (require(topicmodels)) {
+    myLDAfit20 <- LDA(convert(allDfm, to = "topicmodels"), k = 10)
+    get_terms(myLDAfit20, 3)
+}
+```
+
+# test: 搭配詞 bigrams
+```{r}
+# tokenize
+toks <- tokens(bigCorpus, remove_punct = TRUE) %>% tokens_remove(stopwords("english"))
+# bigrams cross the whole dataset
+col <- textstat_collocations(toks, size = 2:3, min_count = 100)
+knitr::kable(col)
+```
+
+# test: textplot_network()
+```{r}
+#不知為何這個跑不出來＠＠
+toptag <- names(topfeatures(tag_dfm, 10))
+tag_fcm <- fcm(tag_dfm)
+head(tag_fcm)
+topgat_fcm <- fcm_select(tag_fcm, toptag)
+textplot_network(topgat_fcm, min_freq = 0.1, edge_alpha = 0.8, edge_size = 5)
+
+```
+
