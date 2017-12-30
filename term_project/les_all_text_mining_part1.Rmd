@@ -7,9 +7,10 @@ output: html_document
 
 # 前置作業
 1. 取得網頁文字資料（請參見司馬智的資料連結）
-資料說明：In this folder we can find all the files that were scraped from Pornhub.com  （Des. 22th  Thomas post on paper notes）
-Categories: LESBIAN + MOST VIEWED + THIS WEEK 
-            ALL     + MOST VIEWED + THIS WEEK
+* 資料說明：In this folder we can find all the files that were scraped from Pornhub.com  （Des. 22th  Thomas post on paper notes）  
+* Categories:   
+  LESBIAN + MOST VIEWED + THIS WEEK   
+  ALL     + MOST VIEWED + THIS WEEK  
 2. 整個資料夾下載後直接解壓縮，解壓縮後系統自動命名為「datafiles」。
 
 # 設定工作路徑
@@ -204,7 +205,7 @@ lapply(as.list(sim), head, 20)
 ```
 
 # test： 自動抽取主題
-# LDA介紹 https://eight2late.wordpress.com/2015/09/29/a-gentle-introduction-to-topic-modeling-using-r/
+#### LDA介紹 https://eight2late.wordpress.com/2015/09/29/a-gentle-introduction-to-topic-modeling-using-r/
 ```{r}
 # les+all
 if (require(topicmodels)) {
