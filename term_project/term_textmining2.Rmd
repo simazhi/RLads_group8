@@ -1,0 +1,97 @@
+---
+title: "term_textmining2"
+author: "Yehwenchin"
+date: "2017/12/30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# environment
+```{r}
+library(quanteda)
+library(stringr)
+library(readtext)
+library(networkD3)
+print(getwd()) 
+setwd("/Users/wenjin/Desktop/R/termpaper")
+getwd()
+
+```
+
+# source 
+```{r}
+les <- read.csv("datafiles/usercomments_lesbian.csv", header = T)
+lestf <- readtext("comments/comment_les_col_renamed.csv", text_field = "comment")
+comlesCorpus <- corpus(lestf)
+
+all <- read.csv("datafiles/usercomments_all.csv", header = F)
+alltf <- readtext("comments/comment_all_col_renamed.csv", text_field = "comment")
+omallCorpus <- corpus(alltf)
+```
+
+#les KWIC (lick,fuck,cum,eat,love/like )
+```{r}
+lick_kwic<-kwic(comlesCorpus, "lick", valuetype = "regex", stem=TRUE) 
+fuck_kwic<-kwic(comlesCorpus, "fuck", valuetype = "regex", stem=TRUE) 
+cum_kwic<-kwic(comlesCorpus, "cum", valuetype = "regex", stem=TRUE) 
+eat_kwic<-kwic(comlesCorpus, "eat", valuetype = "regex", stem=TRUE) 
+love_kwic<-kwic(comlesCorpus, "love", valuetype = "regex", stem=TRUE)
+```
+
+
+#les collocation 
+```{r}
+textcollocation<- textstat_collocations(comlesCorpus,method = "lambda", size = 2, min_count = 2,smoothing = 0.5, tolower = TRUE)
+is.collocations(comlesCorpus)
+write.csv(textcollocation, file = "comments/textcollocations.csv") 
+```
+
+
+# 關鍵詞lick,fuck,eat,love在（1）Lesbian Porn Comments （2）All Porn Comments（3）General Web English等文本中，常用搭配賓語的比較表
+```{r}
+Feature<- list(name = "Feature Words",
+                 children = list(
+                   list(name = "LICK",
+                        children = list(list(name = "Les Porn",
+                                             children = list(list(name = "1.PUSSY"),list(name = "2.ASS"),list(name = "3.ASSHOLE"),list(name = "4.CLIT"),list(name = "5.FOOT"))),
+                                        list(name = "All Porn",
+                                             children = list(list(name = "1.PUSSY"),list(name = "2.ASS"),list(name = "3.ASSHOLE"),list(name = "4.BALL"),list(name = "5.CLITORIS"))),
+                                        list(name = "Web Eng",
+                                             children = list(list(name = "1.LIP"),list(name = "2.PUSSY"),list(name = "3.WOUND"),list(name = "4.FINGER"),list(name = "5.CHOP"))))),
+                    list(name = "FUCK",
+                        children = list(list(name = "Les Porn",
+                                             children = list(list(name = "1.GIRL"),list(name = "2.PUSSY"),list(name = "3.SHIT"),list(name = "4.WOMAN"),list(name = "5.ASS"))),
+                                        list(name = "All Porn",
+                                             children = list(list(name = "1.ASS"),list(name = "2.SISTER"),list(name = "3.GIRL"),list(name = "4.SHIT"),list(name = "5.MOM"))),
+                                        list(name = "Web Eng",
+                                             children = list(list(name = "1.PUSSY"),list(name = "2.ASS"),list(name = "3.SHIT"),list(name = "4.ASSHOLE"),list(name = "5.CUNT"))))),
+                    list(name = "LOVE",
+                        children = list(list(name = "Les Porn",
+                                             children = list(list(name = "1.VIDEO"),list(name = "2.WAY"),list(name = "3.GIRL"),list(name = "4.LESBIAN"),list(name = "5.WOMAN"))),
+                                        list(name = "All Porn",
+                                             children = list(list(name = "1.VIDEO"),list(name = "2.WAY"),list(name = "3.GIRL"),list(name = "4.TIT"),list(name = "4.ASS"))),
+                                        list(name = "Web Eng",
+                                             children = list(list(name = "1.MUSIC"),list(name = "2.IDEA"),list(name = "3.BOOK"),list(name = "4.GOD"),list(name = "5.FACT"))))),
+                   list(name = "EAT",
+                        children = list(list(name = "Les Porn",
+                                             children = list(list(name = "1.PUSSY"),list(name = "2.ASS"),list(name = "3.U"),list(name = "4.MINE"),list(name = "5.BITCH"))),
+                                        list(name = "All Porn",
+                                             children = list(list(name = "2.PUSSY"),list(name = "2.ASS"),list(name = "3.CEREAL"),list(name = "4.(th)em"),list(name = "5.DINNER"))),
+                                        list(name = "Web Eng",
+                                             children = list(list(name = "1.FOOD"),list(name = "2.MEAL"),list(name = "3.MEAT"),list(name = "4.DIET"),list(name = "4.BREAKFAST")))))))
+
+R_feature<-radialNetwork(List = Feature, height = NULL, width = NULL, fontSize = 15,
+  fontFamily = "serif", linkColour = "darkgreen", nodeColour = "#fff",
+  nodeStroke = "olive", textColour = "maroon", opacity =0.5,
+  margin = TRUE)
+saveNetwork (R_feature,"/Users/wenjin/Desktop/R/termpaper/R_feature.html", selfcontained = TRUE)
+
+D_feature<-diagonalNetwork(List = Feature, height = NULL, width = NULL, fontSize = 15,
+  fontFamily = "serif", linkColour = "#ccc", nodeColour = "#fff",
+  nodeStroke = "maroon", textColour = "navyblue", opacity = 0.9,
+  margin = TRUE)
+saveNetwork (D_feature,"/Users/wenjin/Desktop/R/termpaper/D_feature.html", selfcontained = TRUE)
+```
