@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# **This is the base script in Rmd which was cut up into R files that were fed to a server for data gathering. Run those files instead for maximal reprocubility**
+# **This is the base script in Rmd which was cut up into R files that were fed to a server for data gathering. Run those files instead for maximal reproducibility**
 
 
 
