@@ -1,0 +1,91 @@
+---
+title: "Project"
+author: "wayne chen"
+date: "2017年12月21日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r userall}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+userdata_all<- read.csv("C:/Users/Acer/Desktop/userdata_all.csv") 
+agegp <- userdata_all%>%
+  group_by(age)%>%
+  count(age)%>%
+  mutate(agegpall = n/10841*100)%>%
+  ggplot( aes(x=age, y=agegpall))+geom_line()
+
+ggplotly(agegp)
+#percentage of NA= 2.121575500 %
+```  
+
+```{r userlesbian}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+userdata_all<- read.csv("C:/Users/Acer/Desktop/userdata_lesbian.csv") 
+agegp <- userdata_lesbian%>%
+  group_by(age)%>%
+  count(age)%>%
+  mutate(agegplesbian = n/10841*100)%>%
+  ggplot( aes(x=age, y=agegplesbian))+geom_line()
+
+ggplotly(agegp)
+#percentage of NA= 6.30655333 %
+```
+
+```{r like/dislike}
+library(dplyr)
+library(ggplot2)
+va <- arrange(videopages_all, desc(view))
+all_like <- va$percentage[1:1000]
+vl <- arrange(videopages_lesbian, desc(view))
+les_like <- vl$percentage[1:1000]
+numb <- as.numeric(all_like)/as.numeric(les_like)
+dd3 <- data.frame(X=1:1000,all_like=all_like ,les_like=les_like,numb=numb)
+dd3
+dd3_without_row992 <- dd3[-992,]
+dd3_without_row992
+
+ggplot(dd3, aes(x=X, y=numb))+
+  geom_line()
+
+
+ggplot(dd3_without_row992, aes(x=X, y=numb))+
+  geom_smooth()
+
+```
+
+
+
+
+```{r dta}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(plotly)
+userdata_lesbian<- read.csv("C:/Users/Acer/Desktop/userdata_lesbian.csv") 
+agegp <- userdata_lesbian%>%
+  group_by(age)%>%
+  count(age)%>%
+  mutate(agegplesbian = n/3647*100)
+agegp 
+ggplot( aes(x=age, y=agegples))+geom_line()
+
+ggplotly(agegp)
+#percentage of NA= 
+
+```
