@@ -1,0 +1,250 @@
+---
+title: "LocationPart"
+author: "Tim Lin"
+date: "2017/12/25"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r read, echo=TRUE}
+library(readr)
+library(stringr)
+library(dplyr)
+
+## read userdata&country
+# user should amend it
+userdata_all <- read.csv("~/Downloads/userdata_all.csv", header= F)
+userdata_les <- read.csv("~/Downloads/userdata_lesbian.csv", header= F)
+Country_Continent <- read_csv("~/Desktop/106-1 DSR/Country_Continent.csv")
+```
+
+```{r all.table, echo=TRUE}
+## filter data mistake (all)
+# title mistake
+country_all<-userdata_all$V7
+country_all<-str_replace_all(country_all, "_Occupation", "")
+country_all<-str_replace_all(country_all, "_Profile", "")
+country_all<-str_replace_all(country_all, "_Interests", "")
+country_all<-str_replace_all(country_all, "_Turn", "")
+country_all<-str_replace_all(country_all, "_Favorite", "")
+country_all<-str_replace_all(country_all, "_Company", "")
+country_all<-str_replace_all(country_all, "_School", "")
+country_all<-str_replace_all(country_all, "_and", "")
+country_all<-str_replace_all(country_all, "_", " ")
+country_all<-str_replace_all(country_all, "Hong Kong", "China")
+country_all<-str_replace_all(country_all, "United Arab", "United Arab Emirates")
+# country unify
+country_all<-str_replace_all(country_all, "United Kingdom", "UK")
+country_all<-str_replace_all(country_all, "United States", "USA")
+country_all<-str_replace_all(country_all, "usa", "USA")
+
+country_all<-str_replace_all(country_all, "nl", "Netherlands")
+country_all<-str_replace_all(country_all, "Korea", "South Korea")
+
+country_all<-str_replace_all(country_all, "Russian Federation", "Russia")
+
+## Make the table 
+# select country and freqency
+country_all_freq<-table(country_all)
+country_all_freq<-data.frame(country_all_freq)
+country_all_freq<-country_all_freq %>% arrange(desc(Freq))
+colnames(country_all_freq)<-c("Country","Freq_all")
+
+# join the continent
+country_all_freq_sample<-country_all_freq %>% arrange(desc(Freq_all))
+colnames(country_all_freq_sample)<-c("Country","Freq_all")
+country_all_freq_sample<-inner_join(country_all_freq_sample,Country_Continent)
+head(country_all_freq_sample,10)
+```
+
+```{r plot.all, echo=TRUE}
+library(ggplot2)
+
+# World Data
+WorldData <- map_data('world')
+WorldData %>% filter(region != "Antarctica") -> WorldData
+WorldData <- fortify(WorldData)
+
+# Lower the USA freq to 1000
+country_all_freq_sample$Freq_all[1]<-1000
+
+# All_D.F.
+df <- data.frame(region=country_all_freq_sample$Country, 
+                 value=country_all_freq_sample$Freq_all, 
+                 stringsAsFactors=FALSE)
+
+# Plot
+p <- ggplot()
+p <- p + geom_map(data=WorldData, map=WorldData,
+                  aes(x=long, y=lat, group=group, map_id=region),
+                  fill="white", colour="#7f7f7f", size=0.5)
+p <- p + geom_map(data=df, map=WorldData,
+                  aes(fill=value, map_id=region),
+                  colour="#7f7f7f", size=0.5)
+p <- p + coord_map("rectangular", lat0=0, xlim=c(-180,180), ylim=c(-60, 90))
+p <- p + scale_fill_continuous(low="thistle2", high="darkred", 
+                               guide="colorbar")
+p <- p + scale_y_continuous(breaks=c())
+p <- p + scale_x_continuous(breaks=c())
+p <- p + labs(fill="Comments", title="Global Comments (All films)", x="", y="")
+p <- p + theme_bw()
+p <- p + theme(panel.border = element_blank())
+
+# save the graph
+png(filename="~/Desktop/106-1 DSR/all_freq_map.png")
+p 
+dev.off()
+```
+
+```{r les.table, echo=TRUE}
+
+## filter data mistake (all)
+# title mistake
+country_les<-userdata_les$V7
+country_les<-str_replace_all(country_les, "_Occupation", "")
+country_les<-str_replace_all(country_les, "_Profile", "")
+country_les<-str_replace_all(country_les, "_Interests", "")
+country_les<-str_replace_all(country_les, "_Turn", "")
+country_les<-str_replace_all(country_les, "_Favorite", "")
+country_les<-str_replace_all(country_les, "_Company", "")
+country_les<-str_replace_all(country_les, "_School", "")
+country_les<-str_replace_all(country_les, "_and", "")
+country_les<-str_replace_all(country_les, "_", " ")
+# country unify
+country_les<-str_replace_all(country_les, "United Kingdom", "UK")
+country_les<-str_replace_all(country_les, "United States", "USA")
+country_les<-str_replace_all(country_les, "usa", "USA")
+country_les<-str_replace_all(country_les, "United Arab", "United Arab Emirates")
+country_les<-str_replace_all(country_les, "nl", "Netherlands")
+country_les<-str_replace_all(country_les, "Korea", "South Korea")
+country_les<-str_replace_all(country_les, "Hong Kong", "China")
+country_les<-str_replace_all(country_les, "Russian Federation", "Russia")
+## Make the table 
+# select country and freqency
+country_les_freq<-table(country_les)
+country_les_freq<-data.frame(country_les_freq)
+country_les_freq<-country_les_freq %>% arrange(desc(Freq))
+colnames(country_les_freq)<-c("Country","Freq_les")
+# join the continent
+country_les_freq_sample<-country_les_freq %>% arrange(desc(Freq_les))
+colnames(country_les_freq_sample)<-c("Country","Freq_les")
+country_les_freq_sample<-inner_join(country_les_freq_sample,Country_Continent)
+head(country_les_freq_sample,10)
+```
+
+```{r les.plot, echo=TRUE}
+
+WorldData2 <- map_data('world')
+WorldData2 %>% filter(region != "Antarctica") -> WorldData2
+WorldData2 <- fortify(WorldData2)
+
+country_les_freq_sample$Freq_les[1]<-400
+
+df2 <- data.frame(region=country_les_freq_sample$Country, 
+                 value=country_les_freq_sample$Freq_les, 
+                 stringsAsFactors=FALSE)
+# Plot
+p <- ggplot()
+p <- p + geom_map(data=WorldData2, map=WorldData2,
+                  aes(x=long, y=lat, group=group, map_id=region),
+                  fill="white", colour="#7f7f7f", size=0.5)
+p <- p + geom_map(data=df2, map=WorldData2,
+                  aes(fill=value, map_id=region),
+                  colour="#7f7f7f", size=0.5)
+p <- p + coord_map("rectangular", lat0=0, xlim=c(-180,180), ylim=c(-60, 90))
+p <- p + scale_fill_continuous(low="thistle2", high="darkred", 
+                               guide="colorbar")
+p <- p + scale_y_continuous(breaks=c())
+p <- p + scale_x_continuous(breaks=c())
+p <- p + labs(fill="Comments", title="Global Comments (Lesbian films)", x="", y="")
+
+p <- p + theme_bw()
+p <- p + theme(panel.border = element_blank())
+
+# save the graph
+png(filename="~/Desktop/106-1 DSR/les_freq_map.png")
+p 
+dev.off()
+
+```
+
+
+```{r les.percentage, echo=TRUE}
+country_compare_freq<-inner_join(country_all_freq,country_les_freq)
+country_lespercentage<-country_compare_freq %>% 
+  filter(Freq_all>100) %>% 
+  mutate(les_percent = Freq_les/Freq_all) %>%
+  arrange(desc(les_percent)) %>%
+  top_n(n=10)
+country_lespercentage
+
+## Plot
+library(ggplot2)
+country_lespercentage<-transform(country_lespercentage, Country = reorder(Country, order(les_percent,decreasing = TRUE)))
+p<-ggplot(data=country_lespercentage, aes(x=Country, y=les_percent)) +
+  labs(title="Lesbian Viewer Percent")+
+  geom_bar(stat="identity", fill="steelblue")+
+  geom_text(mapping = aes(label= round(les_percent,2)))
+
+# save graph
+png(filename="~/Desktop/106-1 DSR/lespercent_barplot.png")
+p 
+dev.off()
+
+```
+
+
+```{r freq.top5.AND.continent, echo=TRUE}
+## Top 5 country + other continent sum
+# Les Users
+country_les_other<-country_les_freq_sample%>% 
+  filter(Freq_les<60)%>% # ignore the top-5 country
+  group_by(Continent)%>%
+  summarise(SUM=sum(Freq_les))%>%
+  arrange(desc(SUM))
+colnames(country_les_other)<-c("Country","Freq_les")
+country_les_top5<-country_les_freq_sample%>%
+  select(Country,Freq_les)%>%
+  top_n(n=5)
+bind_rows(country_les_top5,country_les_other)%>%
+  arrange(desc(Freq_les))
+# plot(les)
+p1<-bind_rows(country_les_top5,country_les_other)%>%
+  arrange(desc(Freq_les))
+p1<-transform(p1, Country = reorder(Country, order(Freq_les,decreasing = TRUE)))
+p<-ggplot(data=p1, aes(x=Country, y=Freq_les)) +
+  labs(title="Comments Rank (LESBIAN)")+
+  geom_bar(stat="identity", fill="steelblue")
+
+png(filename="~/Desktop/106-1 DSR/freq_continent_barplot_les.png")
+p 
+dev.off()
+
+```
+
+
+```{r all.top5&continent, echo=TRUE}
+# All users
+country_all_other<-country_all_freq_sample%>% 
+  filter(Freq_all<200)%>%# ignore the top-5 country
+  group_by(Continent)%>%
+  summarise(SUM=sum(Freq_all))%>%
+  arrange(desc(SUM))
+colnames(country_all_other)<-c("Country","Freq_all")
+country_all_top5<-country_all_freq_sample%>%
+  select(Country,Freq_all)%>%
+  top_n(n=5)
+
+p2<-bind_rows(country_all_top5,country_all_other)%>%
+  arrange(desc(Freq_all))
+p2<-transform(p2, Country = reorder(Country, order(Freq_all,decreasing = TRUE)))
+p<-ggplot(data=p2, aes(x=Country, y=Freq_all)) +
+  labs(title="Comments Rank (ALL)")+
+  geom_bar(stat="identity", fill="steelblue")
+
+png(filename="~/Desktop/106-1 DSR/freq_continent_barplot_all.png")
+p 
+dev.off()
+```
